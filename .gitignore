@@ -1,0 +1,6 @@
+# ignore official battlesnake cli
+rules/
+
+# ignore all snakes, but keep snakes/ directory
+snakes/*
+!snakes/.gitkeep 
