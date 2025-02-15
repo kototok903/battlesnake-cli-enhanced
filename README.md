@@ -12,7 +12,7 @@ A modification built on top of official Battlesnake CLI. Designed to convenientl
     git clone https://github.com/kototok903/battlesnake-cli-enhanced.git
     ```
 
-2. Install the official Battlesnake CLI ([BattlesnakeOfficial/rules](https://github.com/BattlesnakeOfficial/rules)) to this project's directory. Follow the instalation instructions in the [README](https://github.com/BattlesnakeOfficial/rules/blob/main/README.md). 
+2. Install the official Battlesnake CLI ([BattlesnakeOfficial/rules](https://github.com/BattlesnakeOfficial/rules)) into this project's directory. Follow the instalation instructions in the [README](https://github.com/BattlesnakeOfficial/rules/blob/main/README.md). 
 *After this step you should have a `rules` folder.*
 
 3. Make sure you have Flask python package installed if you are using Battlesnake Python starter project (it uses Flask in `server.py`).
