@@ -1,0 +1,16 @@
+[project]
+name = "battlesnake-cli-enhanced"
+version = "0.1.0"
+description = "CLI for running multiple Battlesnake servers locally and launching games between them"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+battlesnake-cli = "main:main"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]

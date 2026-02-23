@@ -1,6 +1,20 @@
-# ignore official battlesnake cli
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Env
+.venv/
+.env
+
+# OS
+.DS_Store
+
+# Official battlesnake CLI binary
 rules/
 
-# ignore all snakes, but keep snakes/ directory
+# Snake projects (user-provided, not part of this repo)
 snakes/*
 !snakes/.gitkeep 
