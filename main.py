@@ -1,31 +1,39 @@
 import os
-import sys
 import subprocess as sp
-
+import sys
 
 SNAKES_NUM = 8
 
 COMMAND_CODE = {
-    "h": 0, "help": 0, 
-    "s": 1, "start": 1, "run": 1,
-    "a": 6, "startall": 6, 
-    "S": 2, "stop": 2, 
-    "A": 7, "stopall": 7, 
-    "l": 3, "list": 3, 
-    "g": 4, "game": 4, 
-    "q": 8, "quickgame": 8,
-    "e": 5, "exit": 5,
+    "h": 0,
+    "help": 0,
+    "s": 1,
+    "start": 1,
+    "run": 1,
+    "a": 6,
+    "startall": 6,
+    "S": 2,
+    "stop": 2,
+    "A": 7,
+    "stopall": 7,
+    "l": 3,
+    "list": 3,
+    "g": 4,
+    "game": 4,
+    "q": 8,
+    "quickgame": 8,
+    "e": 5,
+    "exit": 5,
 }
 
 game_timeout = 500
 
 snakes = []
 
+
 def main():
     for _ in range(SNAKES_NUM):
-        snakes.append({
-            "active": False
-        })
+        snakes.append({"active": False})
 
     print("Welcome to snake runner\n    - use h for help\n")
 
@@ -114,7 +122,7 @@ def main():
             print("Snakes currently running:")
             for i in range(SNAKES_NUM):
                 if snakes[i]["active"]:
-                    print(f"    - {i + 1} : {snakes[i]['name']} ({snakes[i]['proc']})") # DEBUG
+                    print(f"    - {i + 1} : {snakes[i]['name']} ({snakes[i]['proc']})")  # DEBUG
             print()
 
         elif code == COMMAND_CODE["game"]:
@@ -163,7 +171,7 @@ def main():
             run_game(amount, snake_inds)
             print(f"Running game with {amount} snakes:")
             for i in snake_inds:
-                print(f"    - {i + 1} : {snakes[i]['name']} ({snakes[i]['proc']})") # DEBUG
+                print(f"    - {i + 1} : {snakes[i]['name']} ({snakes[i]['proc']})")  # DEBUG
 
         elif code == COMMAND_CODE["exit"]:
             for i in range(SNAKES_NUM):
@@ -174,28 +182,40 @@ def main():
                     else:
                         print(f"Stopped snake {i + 1} : {name}")
             break
-            
+
         else:
             print("Command is not recognized\n")
-        
 
 
 def print_help():
     print("Available commands:")
     print("h | help\n    - print help")
-    print(f"s | start | run [folder name] [index]\n    - starts the snake from the given folder in the snakes/ directory as Snake <index>\n      (available indices: 1-{SNAKES_NUM})\n      (e.g. start BobSnake 1 - starts the snake in the snakes/BobSnake/ folder as Snake 1)")
-    print(f"a | startall [folder name, folder name, ...]\n    - start given snakes at indices starting with 1\n      (at most {SNAKES_NUM})")
+    print(
+        f"s | start | run [folder name] [index]\n"
+        f"    - starts the snake from the given folder in the snakes/ directory as Snake <index>\n"
+        f"      (available indices: 1-{SNAKES_NUM})\n"
+        f"      (e.g. start BobSnake 1 - starts the snake in the snakes/BobSnake/ folder as Snake 1)"
+    )
+    print(
+        f"a | startall [folder name, folder name, ...]\n"
+        f"    - start given snakes at indices starting with 1\n"
+        f"      (at most {SNAKES_NUM})"
+    )
     print("S | stop [index]\n    - stop snake at given index")
     print("A | stopall\n    - stop all snakes that are currently active")
     print("l | list\n    - list all snakes that are currently active")
     print("g | game [number of snakes]\n    - start game with snakes at indices 1 to number of snakes")
     print("g | game [number of snakes] [index, index, ...]\n    - start game with snakes at given indices")
-    print("q | quickgame [folder name, folder name, ...]\n    - combination of startall and game\n      (starts given snakes at indices starting from 1 and runs a game with them)")
+    print(
+        "q | quickgame [folder name, folder name, ...]\n"
+        "    - combination of startall and game\n"
+        "      (starts given snakes at indices starting from 1 and runs a game with them)"
+    )
     print("e | exit\n    - stop all snakes and exit the program")
 
 
 def change_snake_port(snake_name, snake_ind):
-    """ Sets the port of a snake in snake_name folder to (8000 + snake_ind) """
+    """Sets the port of a snake in snake_name folder to (8000 + snake_ind)"""
 
     server_file = f"snakes/{snake_name}/server.py"
     if not os.path.isfile(server_file):
@@ -204,7 +224,7 @@ def change_snake_port(snake_name, snake_ind):
 
     server_file_contents = ""
 
-    with open(server_file, "r") as f: 
+    with open(server_file, "r") as f:
         server_file_contents = f.read()
 
     port_marker = 'int(os.environ.get("PORT", "'
@@ -217,7 +237,7 @@ def change_snake_port(snake_name, snake_ind):
     port_end = server_file_contents.index('"', port_start)
     server_file_contents = server_file_contents[:port_start] + str(8000 + snake_ind) + server_file_contents[port_end:]
 
-    with open(server_file, "w") as f: 
+    with open(server_file, "w") as f:
         f.write(server_file_contents)
 
     return True
@@ -227,22 +247,22 @@ def run_snake(snake_name, snake_ind):
     if not os.path.isdir(f"snakes/{snake_name}"):
         print(f"Error: folder {snake_name} not found")
         return False
-    
+
     if not change_snake_port(snake_name, snake_ind):
         print("Unable to change port")
         return False
-    
+
     main_file = f"snakes/{snake_name}/main.py"
     if not os.path.isfile(main_file):
         print(f"Error: file {main_file} not found")
         return False
-    
+
     if snakes[snake_ind]["active"]:
         snakes[snake_ind]["proc"].kill()
-        print(f"Stopped previous Snake {snake_ind + 1} : {snakes[snake_ind]["name"]}")
+        print(f"Stopped previous Snake {snake_ind + 1} : {snakes[snake_ind]['name']}")
 
     snakes[snake_ind]["name"] = snake_name
-    snakes[snake_ind]["proc"] = sp.Popen([sys.executable, main_file]) # , stdout=sp.DEVNULL, stderr=sp.DEVNULL)
+    snakes[snake_ind]["proc"] = sp.Popen([sys.executable, main_file])  # , stdout=sp.DEVNULL, stderr=sp.DEVNULL)
     snakes[snake_ind]["active"] = True
 
     return True
@@ -251,11 +271,12 @@ def run_snake(snake_name, snake_ind):
 def stop_snake(snake_ind):
     if not snakes[snake_ind]["active"]:
         return False
-    
+
     snakes[snake_ind]["proc"].kill()
     snakes[snake_ind]["active"] = False
 
     return True
+
 
 def run_game(amount, snake_inds, seed=None):
     cmd = ["battlesnake", "play", "-W", "11", "-H", "11"]
