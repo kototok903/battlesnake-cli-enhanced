@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import subprocess as sp
 
@@ -240,7 +241,7 @@ def run_snake(snake_name, snake_ind):
         print(f"Stopped previous Snake {snake_ind + 1} : {snakes[snake_ind]["name"]}")
 
     snakes[snake_ind]["name"] = snake_name
-    snakes[snake_ind]["proc"] = sp.Popen(["python", main_file]) #, stdout=sp.PIPE)
+    snakes[snake_ind]["proc"] = sp.Popen([sys.executable, main_file]) #, stdout=sp.PIPE)
     snakes[snake_ind]["active"] = True
 
     print("Snake process:", snakes[snake_ind]["proc"]) # DEBUG
