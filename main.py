@@ -1,6 +1,5 @@
 import os
 import sys
-import time
 import subprocess as sp
 
 
@@ -23,8 +22,6 @@ game_timeout = 500
 snakes = []
 
 def main():
-    # proc = sp.Popen(["python", f"test.py"], stdout=sp.PIPE)
-
     for _ in range(SNAKES_NUM):
         snakes.append({
             "active": False
@@ -80,7 +77,6 @@ def main():
                     print(f"Snake {snake_name} is active at index {snake_ind + 1}")
                     snake_ind += 1
                 i += 1
-                # time.sleep(0.3)
             print()
 
         elif code == COMMAND_CODE["stop"]:
@@ -98,25 +94,27 @@ def main():
                 print(f"Error: incorrect index (use 1-{SNAKES_NUM})\n")
                 continue
             # stop the snake
+            name = snakes[snake_ind].get("name", "?")
             if not stop_snake(snake_ind):
-                print(f"Unable to stop snake {snake_name}\n")
+                print(f"Unable to stop snake {snake_ind + 1} : {name}\n")
                 continue
-            print(f"Snake {snake_name} stopped\n")
+            print(f"Snake {snake_ind + 1} : {name} stopped\n")
 
         elif code == COMMAND_CODE["stopall"]:
             for i in range(SNAKES_NUM):
                 if snakes[i]["active"]:
+                    name = snakes[i].get("name", "?")
                     if not stop_snake(i):
-                        print(f"Unable to stop snake {i + 1} : {snake_name}")
+                        print(f"Unable to stop snake {i + 1} : {name}")
                     else:
-                        print(f"Stopped snake {i + 1} : {snake_name}")
+                        print(f"Stopped snake {i + 1} : {name}")
             print()
 
         elif code == COMMAND_CODE["list"]:
             print("Snakes currently running:")
             for i in range(SNAKES_NUM):
                 if snakes[i]["active"]:
-                    print(f"    - {i + 1} : {snakes[i]["name"]} ({snakes[i]["proc"]})") # DEBUG
+                    print(f"    - {i + 1} : {snakes[i]['name']} ({snakes[i]['proc']})") # DEBUG
             print()
 
         elif code == COMMAND_CODE["game"]:
@@ -134,9 +132,9 @@ def main():
                 print("Error: incorrect number of snakes (expected 1-4)\n")
                 continue
             if len(tokens) != 2 and len(tokens) != amount + 2:
-                print(f"Error: incorrect number of args (expected {amount} indecies)\n")
+                print(f"Error: incorrect number of args (expected {amount} indices)\n")
                 continue
-            # get snake indecies for the game
+            # get snake indices for the game
             snake_inds = []
             if len(tokens) == amount + 2:
                 err = False
@@ -165,15 +163,16 @@ def main():
             run_game(amount, snake_inds)
             print(f"Running game with {amount} snakes:")
             for i in snake_inds:
-                print(f"    - {i + 1} : {snakes[i]["name"]} ({snakes[i]["proc"]})") # DEBUG
+                print(f"    - {i + 1} : {snakes[i]['name']} ({snakes[i]['proc']})") # DEBUG
 
         elif code == COMMAND_CODE["exit"]:
             for i in range(SNAKES_NUM):
                 if snakes[i]["active"]:
+                    name = snakes[i]["name"]
                     if not stop_snake(i):
-                        print(f"Unable to stop snake {i + 1} : {snake_name}")
+                        print(f"Unable to stop snake {i + 1} : {name}")
                     else:
-                        print(f"Stopped snake {i + 1} : {snake_name}")
+                        print(f"Stopped snake {i + 1} : {name}")
             break
             
         else:
@@ -184,14 +183,14 @@ def main():
 def print_help():
     print("Available commands:")
     print("h | help\n    - print help")
-    print(f"s | start | run [folder name] [index]\n    - stats the snake from the given folder in the snakes/ directory as Snake <index>\n      (available indecies: 1-{SNAKES_NUM})\n      (e.g. start BobSnake 1 - starts the snake in the snakes/BobSnake/ folder as Snake 1)")
-    print(f"a | startall [folder name, folder name, ...]\n    - start given snakes at indecies starting with 1\n      (at most {SNAKES_NUM})")
+    print(f"s | start | run [folder name] [index]\n    - starts the snake from the given folder in the snakes/ directory as Snake <index>\n      (available indices: 1-{SNAKES_NUM})\n      (e.g. start BobSnake 1 - starts the snake in the snakes/BobSnake/ folder as Snake 1)")
+    print(f"a | startall [folder name, folder name, ...]\n    - start given snakes at indices starting with 1\n      (at most {SNAKES_NUM})")
     print("S | stop [index]\n    - stop snake at given index")
     print("A | stopall\n    - stop all snakes that are currently active")
     print("l | list\n    - list all snakes that are currently active")
-    print("g | game [number of snakes]\n    - start game with snakes at indecies 1 to number of snakes")
-    print("g | game [number of snakes] [index, index, ...]\n    - start game with snakes at given indecies")
-    print("q | quickgame [folder name, folder name, ...]\n    - combination of startall and game\n      (starts given snakes at indecies starting from 1 and runs a game with them)")
+    print("g | game [number of snakes]\n    - start game with snakes at indices 1 to number of snakes")
+    print("g | game [number of snakes] [index, index, ...]\n    - start game with snakes at given indices")
+    print("q | quickgame [folder name, folder name, ...]\n    - combination of startall and game\n      (starts given snakes at indices starting from 1 and runs a game with them)")
     print("e | exit\n    - stop all snakes and exit the program")
 
 
@@ -208,13 +207,15 @@ def change_snake_port(snake_name, snake_ind):
     with open(server_file, "r") as f: 
         server_file_contents = f.read()
 
-    port_str_l = "int(os.environ.get(\"PORT\", \""
-    port_ind = server_file_contents.find(port_str_l) + len(port_str_l)
-    if port_ind == -1:
-        print(f"Error: unknown server.py format, please edit manually")
+    port_marker = 'int(os.environ.get("PORT", "'
+    marker_pos = server_file_contents.find(port_marker)
+    if marker_pos == -1:
+        print("Error: unknown server.py format, please edit manually")
         return False
 
-    server_file_contents = server_file_contents[:port_ind] + str(8000 + snake_ind) + server_file_contents[port_ind + 4:]
+    port_start = marker_pos + len(port_marker)
+    port_end = server_file_contents.index('"', port_start)
+    server_file_contents = server_file_contents[:port_start] + str(8000 + snake_ind) + server_file_contents[port_end:]
 
     with open(server_file, "w") as f: 
         f.write(server_file_contents)
@@ -241,17 +242,14 @@ def run_snake(snake_name, snake_ind):
         print(f"Stopped previous Snake {snake_ind + 1} : {snakes[snake_ind]["name"]}")
 
     snakes[snake_ind]["name"] = snake_name
-    snakes[snake_ind]["proc"] = sp.Popen([sys.executable, main_file]) #, stdout=sp.PIPE)
+    snakes[snake_ind]["proc"] = sp.Popen([sys.executable, main_file]) # , stdout=sp.DEVNULL, stderr=sp.DEVNULL)
     snakes[snake_ind]["active"] = True
-
-    print("Snake process:", snakes[snake_ind]["proc"]) # DEBUG
 
     return True
 
 
 def stop_snake(snake_ind):
     if not snakes[snake_ind]["active"]:
-        # print("Error: snake is not active.")
         return False
     
     snakes[snake_ind]["proc"].kill()
@@ -260,26 +258,19 @@ def stop_snake(snake_ind):
     return True
 
 def run_game(amount, snake_inds, seed=None):
-    command = "battlesnake play -W 11 -H 11"
+    cmd = ["battlesnake", "play", "-W", "11", "-H", "11"]
     for i in snake_inds:
-        command += f" --name {snakes[i]["name"]} --url http://0.0.0.0:{8000 + i}"
-    if amount == 1:
-        command += " -g solo"
-    else:
-        command += " -g standard"
-    command += " -v -c"
+        cmd += ["--name", snakes[i]["name"], "--url", f"http://127.0.0.1:{8000 + i}"]
+    cmd += ["-g", "solo" if amount == 1 else "standard"]
+    cmd += ["-v", "-c"]
     if seed is not None:
-        command += " -r " + seed
-    command += f" -t {game_timeout} --browser"
-    command += " & set /p=Press ENTER to close..."
+        cmd += ["-r", seed]
+    cmd += ["-t", str(game_timeout), "--browser"]
 
     try:
-        sp.run(["start", "cmd", "/c", command], shell=True, check=True)
-        print("Windows cmd opened successfully")
-    except sp.CalledProcessError as e:
-        print(f"Error: unable to open terminal ({e})")
+        sp.Popen(cmd)
     except FileNotFoundError:
-        print("Errot: terminal not found")
+        print("Error: 'battlesnake' command not found. Is the CLI installed?")
 
 
 if __name__ == "__main__":
