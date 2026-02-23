@@ -4,27 +4,19 @@ import sys
 
 SNAKES_NUM = 8
 
+# fmt: off
 COMMAND_CODE = {
-    "h": 0,
-    "help": 0,
-    "s": 1,
-    "start": 1,
-    "run": 1,
-    "a": 6,
-    "startall": 6,
-    "S": 2,
-    "stop": 2,
-    "A": 7,
-    "stopall": 7,
-    "l": 3,
-    "list": 3,
-    "g": 4,
-    "game": 4,
-    "q": 8,
-    "quickgame": 8,
-    "e": 5,
-    "exit": 5,
+    "h": 0, "help": 0,
+    "s": 1, "start": 1, "run": 1,
+    "S": 2, "stop": 2,
+    "l": 3, "list": 3,
+    "g": 4, "game": 4,
+    "e": 5, "exit": 5,
+    "a": 6, "startall": 6,
+    "A": 7, "stopall": 7,
+    "q": 8, "quickgame": 8,
 }
+# fmt: on
 
 game_timeout = 500
 
@@ -42,7 +34,7 @@ def main():
         if len(tokens) == 0:
             continue
 
-        code = COMMAND_CODE.get(tokens[0].lower(), -1)
+        code = COMMAND_CODE.get(tokens[0], COMMAND_CODE.get(tokens[0].lower(), -1))
 
         if code == COMMAND_CODE["help"]:
             print_help()
