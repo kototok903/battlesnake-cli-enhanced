@@ -206,15 +206,24 @@ def print_help():
     print("e | exit\n    - stop all snakes and exit the program")
 
 
+def detect_snake_type(folder):
+    """Returns 'go', 'python', or None"""
+    if os.path.isfile(f"{folder}/main.go"):
+        return "go"
+    if os.path.isfile(f"{folder}/main.py"):
+        return "python"
+    return None
+
+
 def run_snake(snake_name, snake_ind):
     folder = f"snakes/{snake_name}"
     if not os.path.isdir(folder):
         print(f"Error: folder {snake_name} not found")
         return False
 
-    main_file = f"{folder}/main.py"
-    if not os.path.isfile(main_file):
-        print(f"Error: file main.py not found in {snake_name}")
+    snake_type = detect_snake_type(folder)
+    if not snake_type:
+        print(f"Error: no main.go or main.py found in {snake_name}")
         return False
 
     if snakes[snake_ind]["active"]:
@@ -224,10 +233,13 @@ def run_snake(snake_name, snake_ind):
     env = os.environ.copy()
     env["PORT"] = str(8000 + snake_ind)
 
+    if snake_type == "go":
+        cmd = ["go", "run", "."]
+    else:
+        cmd = [sys.executable, "main.py"]
+
     snakes[snake_ind]["name"] = snake_name
-    snakes[snake_ind]["proc"] = sp.Popen(
-        [sys.executable, "main.py"], cwd=folder, env=env
-    )  # , stdout=sp.DEVNULL, stderr=sp.DEVNULL)
+    snakes[snake_ind]["proc"] = sp.Popen(cmd, cwd=folder, env=env)  # , stdout=sp.DEVNULL, stderr=sp.DEVNULL)
     snakes[snake_ind]["active"] = True
 
     return True
