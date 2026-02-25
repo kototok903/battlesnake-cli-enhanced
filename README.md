@@ -1,6 +1,6 @@
 # Battlesnake CLI Enhanced
 
-A modification built on top of official Battlesnake CLI. Designed to conveniently run multiple snakes on a local computer for testing and tournaments.
+A modification built on top of official [Battlesnake CLI](https://github.com/BattlesnakeOfficial/rules?tab=readme-ov-file). Designed to conveniently run multiple snakes on a local computer for testing and tournaments.
 
 ## Supported Languages
 
@@ -21,19 +21,18 @@ A modification built on top of official Battlesnake CLI. Designed to convenientl
    git clone https://github.com/kototok903/battlesnake-cli-enhanced.git
    ```
 
-2. Install the official Battlesnake CLI ([BattlesnakeOfficial/rules](https://github.com/BattlesnakeOfficial/rules)) into this project's directory. Follow the instalation instructions in the [README](https://github.com/BattlesnakeOfficial/rules/blob/main/README.md).
-   _After this step you should have a `rules` folder._
-
-3. Make sure you have Flask python package installed if you are using Battlesnake Python starter project (it uses Flask in `server.py`).
+2. Make sure you have Flask python package installed if you are using Battlesnake Python starter project (it uses Flask in `server.py`).
 
    ```
    pip install Flask
    ```
 
-4. If you want to run Go snakes, make sure Go is installed ([golang.org/dl](https://golang.org/dl/)).
+3. If you want to run Go snakes, make sure Go is installed ([golang.org/dl](https://golang.org/dl/)).
 
-5. Download your snakes and put them into `snakes` folder. Download the whole ReplIt/GitHub projects, no need to adjust anything. Snake type is auto-detected by checking for `main.go` (Go) or `main.py` (Python).
+4. Download your snakes and put them into `snakes` folder. Download the whole ReplIt/GitHub projects, no need to adjust anything. Snake type is auto-detected by checking for `main.go` (Go) or `main.py` (Python).
    _After this step you should have folders with your snakes in `snakes/` (e.g. `snakes/SnakeName1`, `snakes/SnakeName2`)_
+
+_Note: The official Battlesnake CLI binary will be auto-downloaded from [releases](https://github.com/BattlesnakeOfficial/rules/releases) on first run if not already installed._
 
 ## Usage
 

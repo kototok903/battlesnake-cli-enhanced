@@ -1,8 +1,15 @@
+import json
 import os
+import platform
 import subprocess as sp
 import sys
+import tarfile
+import urllib.request
 
 SNAKES_NUM = 8
+BIN_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".bin")
+BATTLESNAKE_PATH = None
+
 
 # fmt: off
 COMMAND_CODE = {
@@ -24,6 +31,9 @@ snakes = []
 
 
 def main():
+    setup_battlesnake()
+    print()
+
     for _ in range(SNAKES_NUM):
         snakes.append({"active": False})
 
@@ -206,6 +216,95 @@ def print_help():
     print("e | exit\n    - stop all snakes and exit the program")
 
 
+def download_battlesnake():
+    """Download battlesnake binary to .bin folder. Returns path or None."""
+    system = platform.system()
+    machine = platform.machine()
+
+    arch_map = {"AMD64": "x86_64", "aarch64": "arm64"}
+    arch = arch_map.get(machine, machine)
+
+    binary_name = "battlesnake.exe" if system == "Windows" else "battlesnake"
+
+    # Query GitHub API for latest release
+    api_url = "https://api.github.com/repos/BattlesnakeOfficial/rules/releases/latest"
+    try:
+        with urllib.request.urlopen(api_url) as response:
+            release = json.loads(response.read().decode())
+    except Exception as e:
+        print(f"Failed to query GitHub API: {e}")
+        return None
+
+    # Find matching asset (pattern: battlesnake_VERSION_SYSTEM_ARCH.tar.gz)
+    search_suffix = f"_{system}_{arch}.tar.gz"
+    download_url = None
+    filename = None
+    for asset in release.get("assets", []):
+        if asset["name"].endswith(search_suffix):
+            download_url = asset["browser_download_url"]
+            filename = asset["name"]
+            break
+
+    if not download_url:
+        print(f"No release found for {system}_{arch}")
+        return None
+
+    os.makedirs(BIN_DIR, exist_ok=True)
+    archive_path = os.path.join(BIN_DIR, filename)
+    binary_path = os.path.join(BIN_DIR, binary_name)
+
+    try:
+        print(f"Downloading {filename}...")
+        urllib.request.urlretrieve(download_url, archive_path)
+
+        print("Extracting...")
+        with tarfile.open(archive_path, "r:gz") as t:
+            t.extract(binary_name, BIN_DIR)
+
+        os.chmod(binary_path, 0o755)
+        os.remove(archive_path)
+        return binary_path
+
+    except Exception as e:
+        print(f"Failed to download battlesnake: {e}")
+        return None
+
+
+def setup_battlesnake():
+    """Find or install battlesnake. Returns path or exits."""
+    global BATTLESNAKE_PATH
+
+    # Check Go installation
+    try:
+        gopath = sp.check_output(["go", "env", "GOPATH"], text=True).strip()
+        go_bin = os.path.join(gopath, "bin", "battlesnake")
+        if os.path.isfile(go_bin):
+            print(f"Battlesnake Go package detected at {go_bin}")
+            BATTLESNAKE_PATH = go_bin
+            return
+    except (sp.CalledProcessError, FileNotFoundError):
+        pass
+
+    # Check local .bin
+    local_bin = os.path.join(BIN_DIR, "battlesnake")
+    if os.path.isfile(local_bin):
+        print("Battlesnake binary detected in .bin/")
+        BATTLESNAKE_PATH = local_bin
+        return
+
+    # Need to install
+    print("Battlesnake CLI not found. Installing...")
+    path = download_battlesnake()
+    if path:
+        print(f"Battlesnake installed to {path}")
+        BATTLESNAKE_PATH = path
+    else:
+        print("Could not install battlesnake. Please install manually:")
+        print("  go install github.com/BattlesnakeOfficial/rules/cli/battlesnake@latest")
+        print("Or download into .bin folder from: https://github.com/BattlesnakeOfficial/rules/releases")
+        sys.exit(1)
+
+
 def detect_snake_type(folder):
     """Returns 'go', 'python', or None"""
     if os.path.isfile(f"{folder}/main.go"):
@@ -256,7 +355,7 @@ def stop_snake(snake_ind):
 
 
 def run_game(amount, snake_inds, seed=None):
-    cmd = ["battlesnake", "play", "-W", "11", "-H", "11"]
+    cmd = [BATTLESNAKE_PATH, "play", "-W", "11", "-H", "11"]
     for i in snake_inds:
         cmd += ["--name", snakes[i]["name"], "--url", f"http://127.0.0.1:{8000 + i}"]
     cmd += ["-g", "solo" if amount == 1 else "standard"]
@@ -265,10 +364,7 @@ def run_game(amount, snake_inds, seed=None):
         cmd += ["-r", seed]
     cmd += ["-t", str(game_timeout), "--browser"]
 
-    try:
-        sp.Popen(cmd)
-    except FileNotFoundError:
-        print("Error: 'battlesnake' command not found. Is the CLI installed?")
+    sp.Popen(cmd)
 
 
 if __name__ == "__main__":
