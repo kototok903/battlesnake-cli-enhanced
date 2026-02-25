@@ -1,12 +1,14 @@
 import json
 import os
 import platform
+import readline
 import subprocess as sp
 import sys
 import tarfile
 import urllib.request
 
 SNAKES_NUM = 8
+SNAKES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "snakes")
 BIN_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".bin")
 BATTLESNAKE_PATH = None
 
@@ -25,19 +27,59 @@ COMMAND_CODE = {
 }
 # fmt: on
 
-game_timeout = 500
+# Commands to autocomplete snake folder names
+SNAKE_COMMANDS = {"start", "run", "s", "startall", "a", "quickgame", "q"}
+
+GAME_TIMEOUT = 500
 
 snakes = []
 
 
+def get_snake_folders():
+    """Returns list of valid snake folder names."""
+    if not os.path.isdir(SNAKES_DIR):
+        return []
+    return [name for name in os.listdir(SNAKES_DIR) if os.path.isdir(os.path.join(SNAKES_DIR, name))]
+
+
+def completer(text, state):
+    """Tab completer for commands and snake folder names."""
+    line = readline.get_line_buffer()
+    tokens = line.split()
+
+    # First token: complete commands
+    if not tokens or (len(tokens) == 1 and not line.endswith(" ")):
+        commands = list(COMMAND_CODE.keys())
+        matches = [c + " " for c in commands if c.startswith(text)]
+    # Subsequent tokens after snake commands: complete snake folders
+    elif tokens[0].lower() in SNAKE_COMMANDS:
+        folders = get_snake_folders()
+        matches = [f + " " for f in folders if f.startswith(text)]
+    else:
+        matches = []
+
+    return matches[state] if state < len(matches) else None
+
+
+def setup_completer():
+    readline.set_completer(completer)
+    readline.set_completer_delims(" ")
+    # macOS uses libedit, which needs different syntax
+    if readline.__doc__ and "libedit" in readline.__doc__:
+        readline.parse_and_bind("bind ^I rl_complete")
+    else:
+        readline.parse_and_bind("tab: complete")
+
+
 def main():
     setup_battlesnake()
+    setup_completer()
     print()
 
     for _ in range(SNAKES_NUM):
         snakes.append({"active": False})
 
-    print("Welcome to snake runner\n    - use h for help\n")
+    print("Welcome to snake runner\n    - use h for help\n    - Tab for autocomplete\n")
 
     while True:
         tokens = input("Command: ").split()
@@ -315,7 +357,7 @@ def detect_snake_type(folder):
 
 
 def run_snake(snake_name, snake_ind):
-    folder = f"snakes/{snake_name}"
+    folder = os.path.join(SNAKES_DIR, snake_name)
     if not os.path.isdir(folder):
         print(f"Error: folder {snake_name} not found")
         return False
@@ -362,7 +404,7 @@ def run_game(amount, snake_inds, seed=None):
     cmd += ["-v", "-c"]
     if seed is not None:
         cmd += ["-r", seed]
-    cmd += ["-t", str(game_timeout), "--browser"]
+    cmd += ["-t", str(GAME_TIMEOUT), "--browser"]
 
     sp.Popen(cmd)
 
