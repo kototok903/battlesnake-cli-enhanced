@@ -81,6 +81,14 @@ def main():
 
     print("Welcome to snake runner\n    - use h for help\n    - Tab for autocomplete\n")
 
+    try:
+        main_loop()
+    except KeyboardInterrupt:
+        print("\n")
+        cleanup_snakes()
+
+
+def main_loop():
     while True:
         tokens = input("Command: ").split()
         if len(tokens) == 0:
@@ -218,13 +226,7 @@ def main():
                 print(f"    - {i + 1} : {snakes[i]['name']} ({snakes[i]['proc']})")  # DEBUG
 
         elif code == COMMAND_CODE["exit"]:
-            for i in range(SNAKES_NUM):
-                if snakes[i]["active"]:
-                    name = snakes[i]["name"]
-                    if not stop_snake(i):
-                        print(f"Unable to stop snake {i + 1} : {name}")
-                    else:
-                        print(f"Stopped snake {i + 1} : {name}")
+            cleanup_snakes()
             break
 
         else:
@@ -345,6 +347,16 @@ def setup_battlesnake():
         print("  go install github.com/BattlesnakeOfficial/rules/cli/battlesnake@latest")
         print("Or download into .bin folder from: https://github.com/BattlesnakeOfficial/rules/releases")
         sys.exit(1)
+
+
+def cleanup_snakes():
+    for i in range(SNAKES_NUM):
+        if snakes[i]["active"]:
+            name = snakes[i]["name"]
+            if not stop_snake(i):
+                print(f"Unable to stop snake {i + 1} : {name}")
+            else:
+                print(f"Stopped snake {i + 1} : {name}")
 
 
 def detect_snake_type(folder):
