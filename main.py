@@ -549,18 +549,21 @@ def run_test(snake_inds, num_games=DEFAULT_TEST_GAMES):
         winner_str = f"{winner} wins" if winner else "Tie"
         summary = ", ".join(f"{name}: {count}" for name, count in wins.items())
         game_num_width = len(str(num_games))
-        print(f"Game {game_num:>{game_num_width}}/{num_games}: {winner_str} ({turns} turns)\t\t| {summary}")
+        left = f"Game {game_num:>{game_num_width}}/{num_games}: {winner_str} ({turns} turns)"
+        print(f"{left:<45} | {summary}")
 
     # Final summary
     print(f"\n=== Results ({num_games} games) ===")
     nontie_num = 0
     for name, count in wins.items():
         pct = (count / num_games) * 100
-        print(f"  {name}:\t{count} wins ({pct:.1f}%)")
+        left = f"  {name}:"
+        print(f"{left:<15} {count} wins ({pct:.1f}%)")
         nontie_num += count
     if nontie_num > 0:
         pct = ((num_games - nontie_num) / num_games) * 100
-        print(f"  Ties:\t{num_games - nontie_num}     ({pct:.1f}%)")
+        left = "  Ties:"
+        print(f"{left:<15} {num_games - nontie_num}      ({pct:.1f}%)")
     avg_turns = sum(turns_list) / len(turns_list) if turns_list else 0
     print(f"  Avg turns: {avg_turns:.1f}\n")
 
