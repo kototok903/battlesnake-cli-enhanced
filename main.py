@@ -2,6 +2,7 @@ import json
 import os
 import platform
 import readline
+import signal
 import subprocess as sp
 import sys
 import tarfile
@@ -24,6 +25,7 @@ COMMAND_CODE = {
     "a": 6, "startall": 6,
     "A": 7, "stopall": 7,
     "q": 8, "quickgame": 8,
+    "t": 9, "test": 9,
 }
 # fmt: on
 
@@ -31,6 +33,7 @@ COMMAND_CODE = {
 SNAKE_COMMANDS = {"start", "run", "s", "startall", "a", "quickgame", "q"}
 
 GAME_TIMEOUT = 500
+DEFAULT_TEST_GAMES = 100
 
 snakes = []
 
@@ -225,6 +228,75 @@ def main_loop():
             for i in snake_inds:
                 print(f"    - {i + 1} : {snakes[i]['name']} ({snakes[i]['proc']})")  # DEBUG
 
+        elif code == COMMAND_CODE["test"]:
+            if len(tokens) < 2:
+                print("Error: number of snakes not provided\n")
+                continue
+            # Parse amount of snakes
+            try:
+                amount = int(tokens[1])
+            except ValueError:
+                print("Error: incorrect number of snakes (expected 1-4)\n")
+                continue
+            if amount < 1 or amount > 4:
+                print("Error: incorrect number of snakes (expected 1-4)\n")
+                continue
+
+            snake_inds = []
+            num_games = DEFAULT_TEST_GAMES
+
+            if len(tokens) == 2:
+                # test [amount] -> use indices 0..amount-1
+                snake_inds = list(range(amount))
+            elif len(tokens) == 2 + amount:
+                # test [amount] [indices...]
+                for i in range(2, 2 + amount):
+                    try:
+                        idx = int(tokens[i]) - 1
+                    except ValueError:
+                        print(f"Error: invalid index {tokens[i]}\n")
+                        break
+                    if idx < 0 or idx >= SNAKES_NUM or not snakes[idx]["active"]:
+                        print(f"Error: snake {tokens[i]} not active\n")
+                        break
+                    snake_inds.append(idx)
+                if len(snake_inds) != amount:
+                    continue
+            elif len(tokens) == 3 + amount:
+                # test [amount] [indices...] [num_games]
+                for i in range(2, 2 + amount):
+                    try:
+                        idx = int(tokens[i]) - 1
+                    except ValueError:
+                        print(f"Error: invalid index {tokens[i]}\n")
+                        break
+                    if idx < 0 or idx >= SNAKES_NUM or not snakes[idx]["active"]:
+                        print(f"Error: snake {tokens[i]} not active\n")
+                        break
+                    snake_inds.append(idx)
+                if len(snake_inds) != amount:
+                    continue
+                try:
+                    num_games = int(tokens[2 + amount])
+                except ValueError:
+                    print("Error: invalid number of games\n")
+                    continue
+            else:
+                print(f"Error: expected {amount} indices (and optional game count)\n")
+                continue
+
+            # Verify all snakes active
+            all_active = True
+            for idx in snake_inds:
+                if not snakes[idx]["active"]:
+                    print(f"Error: snake {idx + 1} not active\n")
+                    all_active = False
+                    break
+            if not all_active:
+                continue
+
+            run_test(snake_inds, num_games)
+
         elif code == COMMAND_CODE["exit"]:
             cleanup_snakes()
             break
@@ -256,6 +328,12 @@ def print_help():
         "q | quickgame [folder name, folder name, ...]\n"
         "    - combination of startall and game\n"
         "      (starts given snakes at indices starting from 1 and runs a game with them)"
+    )
+    print(
+        "t | test [number of snakes] [index, index, ...] [num games?]\n"
+        "    - run multiple games (default 100) and show win statistics\n"
+        "      (e.g. test 2 1 2 - runs 100 games with snakes 1 and 2)\n"
+        "      (e.g. test 2 1 2 50 - runs 50 games)"
     )
     print("e | exit\n    - stop all snakes and exit the program")
 
@@ -392,7 +470,9 @@ def run_snake(snake_name, snake_ind):
         cmd = [sys.executable, "main.py"]
 
     snakes[snake_ind]["name"] = snake_name
-    snakes[snake_ind]["proc"] = sp.Popen(cmd, cwd=folder, env=env)  # , stdout=sp.DEVNULL, stderr=sp.DEVNULL)
+    snakes[snake_ind]["proc"] = sp.Popen(
+        cmd, cwd=folder, env=env, stdout=sp.DEVNULL, stderr=sp.DEVNULL, start_new_session=True
+    )
     snakes[snake_ind]["active"] = True
 
     return True
@@ -402,7 +482,13 @@ def stop_snake(snake_ind):
     if not snakes[snake_ind]["active"]:
         return False
 
-    snakes[snake_ind]["proc"].kill()
+    # Kill entire process group (needed for `go run` which spawns child processes)
+    proc = snakes[snake_ind]["proc"]
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+    except (ProcessLookupError, PermissionError):
+        # Fallback if not a process group leader
+        proc.kill()
     snakes[snake_ind]["active"] = False
 
     return True
@@ -419,6 +505,64 @@ def run_game(amount, snake_inds, seed=None):
     cmd += ["-t", str(GAME_TIMEOUT), "--browser"]
 
     sp.Popen(cmd)
+
+
+def run_test_game(snake_inds):
+    """Run single game, return (winner_name, num_turns) or (None, num_turns) for tie."""
+    import re
+
+    cmd = [BATTLESNAKE_PATH, "play", "-W", "11", "-H", "11"]
+    for i in snake_inds:
+        cmd += ["--name", snakes[i]["name"], "--url", f"http://127.0.0.1:{8000 + i}"]
+    cmd += ["-g", "solo" if len(snake_inds) == 1 else "standard"]
+    cmd += ["-t", str(GAME_TIMEOUT)]
+
+    result = sp.run(cmd, capture_output=True, text=True)
+
+    # Parse: "Game completed after 123 turns. Snake1 was the winner."
+    # Note: battlesnake CLI logs to stderr
+    match = re.search(r"Game completed after (\d+) turns\. (.+) was the winner\.", result.stderr)
+    if match:
+        return match.group(2), int(match.group(1))
+
+    # No winner (tie or error) - try to get turns at least
+    turns_match = re.search(r"Game completed after (\d+) turns", result.stderr)
+    turns = int(turns_match.group(1)) if turns_match else 0
+    return None, turns
+
+
+def run_test(snake_inds, num_games=DEFAULT_TEST_GAMES):
+    """Run multiple games and print results."""
+    wins = {snakes[i]["name"]: 0 for i in snake_inds}
+    turns_list = []
+
+    print(f"Running {num_games} games...\n")
+
+    for game_num in range(1, num_games + 1):
+        winner, turns = run_test_game(snake_inds)
+        turns_list.append(turns)
+
+        if winner:
+            wins[winner] = wins.get(winner, 0) + 1
+
+        # Progress line
+        winner_str = f"{winner} wins" if winner else "Tie"
+        summary = ", ".join(f"{name}: {count}" for name, count in wins.items())
+        game_num_width = len(str(num_games))
+        print(f"Game {game_num:>{game_num_width}}/{num_games}: {winner_str} ({turns} turns)\t\t| {summary}")
+
+    # Final summary
+    print(f"\n=== Results ({num_games} games) ===")
+    nontie_num = 0
+    for name, count in wins.items():
+        pct = (count / num_games) * 100
+        print(f"  {name}:\t{count} wins ({pct:.1f}%)")
+        nontie_num += count
+    if nontie_num > 0:
+        pct = ((num_games - nontie_num) / num_games) * 100
+        print(f"  Ties:\t{num_games - nontie_num}     ({pct:.1f}%)")
+    avg_turns = sum(turns_list) / len(turns_list) if turns_list else 0
+    print(f"  Avg turns: {avg_turns:.1f}\n")
 
 
 if __name__ == "__main__":

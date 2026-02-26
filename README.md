@@ -64,5 +64,7 @@ Finally, we can use `game 2 1 2` to start a game with 2 snakes: Snake 1 and Snak
 Now, let's assume we made some changes to AlienSnake's code.
 Just use `start AlienSnake 1` to restart AlienSnake at index 1. Alternatively, we can use `start AlienSnake 3` to start the new code at index 3 and then use `game 2 1 3` to test our new AlienSnake against its old version.
 
+Also, if you decide to test which of your snakes is stronger on average, use the `test` command to run big number of games and see results. For example, using `test 2 1 2 100` would simulate 100 games of AlienSnake against BirdSnake, and display the stats afterwards.
+
 When we are done with coding for today, use `exit` to stop the CLI and all running snakes.
 _Note: when you start the CLI again, no snakes will be running and you'll need to start them again._
