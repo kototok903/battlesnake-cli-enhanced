@@ -9,7 +9,7 @@ A modification built on top of official [Battlesnake CLI](https://github.com/Bat
 
 ## Dependencies
 
-- Python
+- Python 3.10+
 - Flask python package (for Python snakes)
 - Go (for Go snakes)
 
@@ -36,18 +36,18 @@ _Note: The official Battlesnake CLI binary will be auto-downloaded from [release
 
 ## Usage
 
-Run the enhanced CLI
+Run the enhanced CLI from the project root:
 
 ```
-python main.py
+python -m python.battlesnake_cli
 ```
 
-The tool allows you to run the snakes in `snakes` folder at some indecies and run local games with snakes you started.
+The tool allows you to run the snakes in `snakes` folder at some indices and run local games with snakes you started.
 
-Use `start [SnakeFolder] [index]` to run the snake located in `snakes/SnakeFolder` at the given index. (One snake can be started at multiple indecies.)
+Use `start [SnakeFolder] [index]` to run the snake located in `snakes/SnakeFolder` at the given index. (One snake can be started at multiple indices.)
 
-Use `game [AmountOfSnakes] [index, index, ...]` to run a local game where `AmountOfSnakes` is the amount of snakes in the game and idecies are the idecies of currently running snakes you want to be in the game (provide exactly `AmountOfSnakes` indecies).
-Alternatively, use `game [AmountOfSnakes]` to avoid providing indecies and just run a game with snakes at indecies from 1 to `AmountOfSnakes`.
+Use `game [AmountOfSnakes] [index, index, ...]` to run a local game where `AmountOfSnakes` is the amount of snakes in the game and indices are the indices of currently running snakes you want to be in the game (provide exactly `AmountOfSnakes` indices).
+Alternatively, use `game [AmountOfSnakes]` to avoid providing indices and just run a game with snakes at indices from 1 to `AmountOfSnakes`.
 
 Use `help` to see the full command list.
 
@@ -55,7 +55,10 @@ Use `help` to see the full command list.
 
 Let's assume we have snakes `AlienSnake` and `BirdSnake` in the folder `snakes`.
 
-Use `python main.py` to start the CLI.
+Start the CLI:
+```
+python -m python.battlesnake_cli
+```
 
 First, we use `start AlienSnake 1` to start the AlienSnake as Snake 1.
 Then, use `start BirdSnake 2` to start the BirdSnake as Snake 2.
